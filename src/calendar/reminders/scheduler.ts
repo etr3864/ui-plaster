@@ -10,6 +10,7 @@ import { config } from "../../config";
 import { Meeting } from "../types";
 import { diffInMinutes, parseTimeToDate, formatDateYMD, getNowInIsrael } from "./timeUtils";
 import { buildDayReminderMessage, buildBeforeReminderMessage } from "./messages";
+import { isOptedOut } from "../../optout/optOutManager";
 
 /**
  * Convert Israeli phone format to international for WhatsApp
@@ -30,6 +31,16 @@ function toInternationalFormat(phone: string): string {
 async function processMeeting(key: string, meeting: Meeting): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
+
+  // Check if customer opted out - don't send reminders
+  const internationalPhone = toInternationalFormat(meeting.phone);
+  if (await isOptedOut(internationalPhone)) {
+    logger.info("🚫 Skipping reminder - customer opted out", {
+      phone: meeting.phone,
+      name: meeting.name,
+    });
+    return;
+  }
 
   const now = getNowInIsrael();
   const meetingDateTime = parseTimeToDate(meeting.time, meeting.date);

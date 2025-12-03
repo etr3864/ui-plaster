@@ -56,6 +56,19 @@ export const config = {
   reminderMinutesBefore: parseInt(process.env.REMINDER_MINUTES_BEFORE || "45", 10),
   reminderWindowMinutes: parseInt(process.env.REMINDER_WINDOW_MINUTES || "3", 10),
 
+  // Voice Reply System (ElevenLabs TTS)
+  voiceRepliesEnabled: process.env.VOICE_REPLIES === "on",
+  minMessagesForRandomVoice: parseInt(process.env.MIN_MESSAGES_FOR_RANDOM_VOICE || "5", 10),
+  randomVoiceAiCheck: process.env.RANDOM_VOICE_AI_CHECK === "on",
+  elevenLabsApiKey: process.env.ELEVENLABS_API_KEY || "",
+  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID || "",
+  elevenLabsModelId: process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2",
+
+  // Cloudinary (for temporary audio hosting)
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",
+
   // Debug mode (skip webhook verification)
   skipWebhookVerification: process.env.SKIP_WEBHOOK_VERIFICATION === "true",
 };

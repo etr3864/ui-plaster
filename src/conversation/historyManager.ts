@@ -14,6 +14,7 @@ import { buildPromptMessages } from "./buildPrompt";
 import { askOpenAI } from "../openai/client";
 import { sendTextMessage } from "../wa/sendMessage";
 import { getRedis } from "../db/redis";
+import { handleVoiceReply } from "../voice/voiceReplyHandler";
 
 // In-memory conversation history per phone number (fallback)
 const conversationHistory = new Map<string, ChatMessage[]>();
@@ -228,7 +229,7 @@ export async function flushConversation(
       }, false); // Don't log individual saves
     }
 
-    // Add assistant response to history
+    // Add assistant response to history (always save as text, even if sent as voice)
     await addToHistory(phone, {
       role: "assistant",
       content: response,
@@ -239,7 +240,34 @@ export async function flushConversation(
     const finalHistorySize = history.length + batchMessages.length + 1;
     logger.info(`💾 Conversation saved (${finalHistorySize} messages in history)`);
 
-    // Send response back to user
+    // Attempt voice reply if feature is enabled
+    let sentAsVoice = false;
+    if (config.voiceRepliesEnabled) {
+      try {
+        // Detect incoming message type (for voice trigger)
+        const incomingType = batchMessages[0]?.message?.type || "text";
+        
+        sentAsVoice = await handleVoiceReply({
+          phone,
+          responseText: response,
+          incomingMessageType: incomingType,
+          conversationHistory: history,
+        });
+      } catch (error) {
+        logger.warn("Voice reply failed, falling back to text", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    // If voice was sent successfully, we're done
+    if (sentAsVoice) {
+      logger.info(`🎤 Voice reply sent: "${response.substring(0, 80)}${response.length > 80 ? "..." : ""}"`);
+      console.log("─".repeat(60) + "\n");
+      return;
+    }
+
+    // Otherwise, send text response (normal flow or fallback)
     const sent = await sendTextMessage(phone, response);
 
     if (!sent) {

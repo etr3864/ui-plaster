@@ -20,17 +20,45 @@ const openai = new OpenAI({
  * @returns Response text from OpenAI
  */
 export async function askOpenAI(messages: OpenAIMessage[]): Promise<string | null> {
+  return callOpenAI(messages, {
+    model: config.openaiModel,
+    maxTokens: config.openaiMaxTokens,
+    temperature: config.openaiTemperature,
+  });
+}
+
+/**
+ * Generic OpenAI call with customizable parameters
+ * @param messages Array of messages
+ * @param options Custom model, temperature, maxTokens
+ * @returns Response text from OpenAI
+ */
+export async function callOpenAI(
+  messages: OpenAIMessage[],
+  options?: {
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+    timeout?: number;
+  }
+): Promise<string | null> {
+  const {
+    model = config.openaiModel,
+    maxTokens = config.openaiMaxTokens,
+    temperature = config.openaiTemperature,
+    timeout = 120000, // 2 minutes default
+  } = options || {};
+
   try {
-    // Wrap with 2-minute timeout to prevent hanging requests
     const response = await withTimeout(
       openai.chat.completions.create({
-        model: config.openaiModel,
+        model,
         messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
-        temperature: config.openaiTemperature,
-        max_completion_tokens: config.openaiMaxTokens,
+        temperature,
+        max_completion_tokens: maxTokens,
       }),
-      120000, // 2 minutes (120 seconds)
-      "OpenAI request timed out after 2 minutes"
+      timeout,
+      `OpenAI request timed out after ${timeout / 1000} seconds`
     );
 
     const content = response.choices[0]?.message?.content;
@@ -43,17 +71,18 @@ export async function askOpenAI(messages: OpenAIMessage[]): Promise<string | nul
     return content;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     if (errorMessage.includes("timed out")) {
-      logger.error("[AI] Request timeout - took longer than 2 minutes", {
+      logger.error("[AI] Request timeout", {
         error: errorMessage,
+        timeout,
       });
     } else {
       logger.error("[AI] Error", {
         error: errorMessage,
       });
     }
-    
+
     return null;
   }
 }

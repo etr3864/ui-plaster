@@ -13,9 +13,58 @@ import {
   sendTestBeforeReminder, 
   listAllMeetings 
 } from "./reminders/testReminders";
+import { formatMeetingDateTime, getFirstName } from "./dateFormatter";
 import { logger } from "../utils/logger";
+import { getRedis } from "../db/redis";
 
 const router = Router();
+
+/**
+ * Add meeting info to chat history
+ * This allows the AI to know about scheduled meetings
+ */
+async function addMeetingToHistory(meeting: Meeting): Promise<void> {
+  try {
+    const redis = getRedis();
+    if (!redis) return;
+
+    const chatKey = `chat:${meeting.phone}`;
+    const historyData = await redis.get(chatKey);
+    
+    if (!historyData) {
+      // No chat history yet - skip
+      return;
+    }
+
+    const history = JSON.parse(historyData);
+    
+    // Format the meeting info in Hebrew
+    const firstName = getFirstName(meeting.name);
+    const dateTime = formatMeetingDateTime(meeting.date, meeting.time);
+    const meetingInfo = `${firstName} קבע/ה פגישת ייעוץ ${dateTime}`;
+
+    // Add as system message
+    history.push({
+      role: "system",
+      content: meetingInfo,
+      timestamp: Date.now(),
+    });
+
+    // Save back to Redis
+    const ttlSeconds = await redis.ttl(chatKey);
+    if (ttlSeconds > 0) {
+      await redis.setex(chatKey, ttlSeconds, JSON.stringify(history));
+      logger.info("📝 Meeting added to chat history", {
+        phone: meeting.phone,
+        info: meetingInfo,
+      });
+    }
+  } catch (error) {
+    logger.warn("⚠️  Failed to add meeting to history", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 /**
  * POST /calendar/meeting
@@ -84,6 +133,9 @@ router.post("/meeting", async (req: Request, res: Response) => {
       date: meeting.date,
       time: meeting.time,
     });
+
+    // Add meeting info to chat history (async - don't wait)
+    void addMeetingToHistory(meeting);
 
     // Send confirmation message to customer (async - don't wait)
     void sendMeetingConfirmation(meeting);

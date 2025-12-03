@@ -14,6 +14,8 @@ import { transcribeAudio } from "../openai/transcribe";
 import { analyzeImage } from "../openai/vision";
 import { addMessageToBuffer } from "../buffer/bufferManager";
 import { sendTextMessage } from "./sendMessage";
+import { detectOptOut } from "../optout/optOutDetector";
+import { isOptedOut, setOptOut, clearOptOut } from "../optout/optOutManager";
 
 // Track processed message IDs to avoid duplicates
 const processedMessages = new Set<string>();
@@ -99,6 +101,45 @@ export function handleWhatsAppWebhook(req: Request, res: Response): void {
 async function processMessage(message: WAMessage): Promise<void> {
   // Normalize message
   const normalized = normalizeIncoming(message);
+  const phone = normalized.sender.phone;
+  const messageText = normalized.message.text;
+
+  // ═════════════════════════════════════════════════════════════════════
+  // SMART OPT-OUT SYSTEM
+  // ═════════════════════════════════════════════════════════════════════
+
+  // Step 1: Check if customer is currently opted out
+  const customerOptedOut = await isOptedOut(phone);
+
+  if (customerOptedOut) {
+    // Customer sent a message AFTER opting out → They're back! Re-engage them.
+    logger.info("🔄 Customer re-engaged after opt-out!", { phone });
+    await clearOptOut(phone);
+    // Continue processing normally...
+  }
+
+  // Step 2: Check if THIS message is an opt-out request (only for text messages)
+  if (messageText) {
+    const optOutDetection = await detectOptOut(messageText);
+
+    if (optOutDetection.isOptOut && optOutDetection.confidence !== "low") {
+      // Customer wants to opt out!
+      await setOptOut(phone, optOutDetection.detectedPhrase);
+
+      // Send confirmation message
+      await sendTextMessage(
+        phone,
+        "הבנתי, הסרתי אותך מרשימת התפוצה. אם תרצה לחזור ולשוחח, פשוט שלח לי הודעה בכל עת! 👋"
+      );
+
+      logger.info("✅ Opt-out confirmation sent", { phone });
+      return; // Don't process further
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════
+  // CONTINUE NORMAL PROCESSING
+  // ═════════════════════════════════════════════════════════════════════
 
   const isAudio = message.message?.audioMessage;
   const isImage = message.message?.imageMessage;
