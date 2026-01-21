@@ -48,7 +48,7 @@ export async function textToSpeech(text: string): Promise<Buffer> {
     const audioBuffer = Buffer.from(response.data);
     const durationMs = Date.now() - startTime;
 
-    logger.info("✅ Audio generated", {
+    logger.info(" Audio generated", {
       size: `${Math.round(audioBuffer.length / 1024)}KB`,
       time: `${durationMs}ms`,
     });
@@ -58,13 +58,13 @@ export async function textToSpeech(text: string): Promise<Buffer> {
     const durationMs = Date.now() - startTime;
 
     if (axios.isAxiosError(error)) {
-      logger.error("❌ ElevenLabs API error", {
+      logger.error(" ElevenLabs API error", {
         status: error.response?.status,
         message: error.message,
         durationMs,
       });
     } else {
-      logger.error("❌ TTS conversion failed", {
+      logger.error(" TTS conversion failed", {
         error: error instanceof Error ? error.message : String(error),
         durationMs,
       });

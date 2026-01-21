@@ -19,7 +19,7 @@ export function initRedis(): Redis | null {
   }
 
   if (!config.redisHost || !config.redisPassword) {
-    logger.warn("⚠️  Redis credentials missing - falling back to in-memory storage");
+    logger.warn("  Redis credentials missing - falling back to in-memory storage");
     return null;
   }
 
@@ -36,25 +36,25 @@ export function initRedis(): Redis | null {
     });
 
     redis.on("connect", () => {
-      logger.info("✅ Redis connected", {
+      logger.info(" Redis connected", {
         host: config.redisHost,
         port: config.redisPort,
       });
     });
 
     redis.on("error", (error) => {
-      logger.error("❌ Redis connection error", {
+      logger.error(" Redis connection error", {
         error: error.message,
       });
     });
 
     redis.on("close", () => {
-      logger.warn("⚠️  Redis connection closed");
+      logger.warn("  Redis connection closed");
     });
 
     return redis;
   } catch (error) {
-    logger.error("❌ Failed to initialize Redis", {
+    logger.error(" Failed to initialize Redis", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;

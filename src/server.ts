@@ -10,6 +10,7 @@ import { handleWhatsAppWebhook } from "./wa/webhookHandler";
 import { initRedis, closeRedis, getRedis } from "./db/redis";
 import calendarRoutes from "./calendar/routes";
 import { startMeetingReminderScheduler } from "./calendar/reminders/scheduler";
+import { startSummaryScheduler } from "./summary";
 
 const app = express();
 
@@ -126,8 +127,8 @@ app.listen(config.port, () => {
     console.log(`  Storage: Redis (${config.redisHost}:${config.redisPort})`);
     console.log(`  TTL: ${config.redisTtlDays} days`);
     
-    // Start meeting reminder scheduler (only if Redis is enabled)
     startMeetingReminderScheduler();
+    startSummaryScheduler();
   } else {
     console.log(`  Storage: In-Memory (not persistent)`);
   }

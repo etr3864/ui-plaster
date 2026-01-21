@@ -25,7 +25,7 @@ export async function sendTestDayReminder(phone: string): Promise<boolean> {
   try {
     const redis = getRedis();
     if (!redis) {
-      logger.error("❌ Redis not available");
+      logger.error(" Redis not available");
       return false;
     }
 
@@ -33,7 +33,7 @@ export async function sendTestDayReminder(phone: string): Promise<boolean> {
     const data = await redis.get(key);
 
     if (!data) {
-      logger.error("❌ No meeting found for this phone", { phone });
+      logger.error(" No meeting found for this phone", { phone });
       return false;
     }
 
@@ -41,19 +41,19 @@ export async function sendTestDayReminder(phone: string): Promise<boolean> {
     const message = buildDayReminderMessage(meeting);
     const internationalPhone = toInternationalFormat(phone);
 
-    logger.info("📨 Sending TEST day reminder", { phone, name: meeting.name });
+    logger.info(" Sending TEST day reminder", { phone, name: meeting.name });
     
     const sent = await sendTextMessage(internationalPhone, message);
 
     if (sent) {
-      logger.info("✅ TEST day reminder sent successfully");
+      logger.info(" TEST day reminder sent successfully");
       return true;
     } else {
-      logger.error("❌ Failed to send TEST day reminder");
+      logger.error(" Failed to send TEST day reminder");
       return false;
     }
   } catch (error) {
-    logger.error("❌ Error sending test reminder", {
+    logger.error(" Error sending test reminder", {
       error: error instanceof Error ? error.message : String(error),
     });
     return false;
@@ -67,7 +67,7 @@ export async function sendTestBeforeReminder(phone: string, minutesBefore: numbe
   try {
     const redis = getRedis();
     if (!redis) {
-      logger.error("❌ Redis not available");
+      logger.error(" Redis not available");
       return false;
     }
 
@@ -75,7 +75,7 @@ export async function sendTestBeforeReminder(phone: string, minutesBefore: numbe
     const data = await redis.get(key);
 
     if (!data) {
-      logger.error("❌ No meeting found for this phone", { phone });
+      logger.error(" No meeting found for this phone", { phone });
       return false;
     }
 
@@ -83,7 +83,7 @@ export async function sendTestBeforeReminder(phone: string, minutesBefore: numbe
     const message = buildBeforeReminderMessage(meeting, minutesBefore);
     const internationalPhone = toInternationalFormat(phone);
 
-    logger.info("📨 Sending TEST before-meeting reminder", { 
+    logger.info(" Sending TEST before-meeting reminder", { 
       phone, 
       name: meeting.name,
       minutesBefore 
@@ -92,14 +92,14 @@ export async function sendTestBeforeReminder(phone: string, minutesBefore: numbe
     const sent = await sendTextMessage(internationalPhone, message);
 
     if (sent) {
-      logger.info("✅ TEST before-meeting reminder sent successfully");
+      logger.info(" TEST before-meeting reminder sent successfully");
       return true;
     } else {
-      logger.error("❌ Failed to send TEST before-meeting reminder");
+      logger.error(" Failed to send TEST before-meeting reminder");
       return false;
     }
   } catch (error) {
-    logger.error("❌ Error sending test reminder", {
+    logger.error(" Error sending test reminder", {
       error: error instanceof Error ? error.message : String(error),
     });
     return false;
@@ -128,7 +128,7 @@ export async function listAllMeetings(): Promise<Meeting[]> {
 
     return meetings;
   } catch (error) {
-    logger.error("❌ Error listing meetings", {
+    logger.error(" Error listing meetings", {
       error: error instanceof Error ? error.message : String(error),
     });
     return [];

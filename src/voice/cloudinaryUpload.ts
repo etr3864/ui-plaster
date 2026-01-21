@@ -47,7 +47,7 @@ export async function uploadAudioToCloudinary(audioBuffer: Buffer): Promise<stri
 
     const durationMs = Date.now() - startTime;
 
-    logger.info("✅ Audio uploaded to Cloudinary", {
+    logger.info(" Audio uploaded to Cloudinary", {
       url: result.secure_url,
       size: `${Math.round(audioBuffer.length / 1024)}KB`,
       durationMs,
@@ -57,7 +57,7 @@ export async function uploadAudioToCloudinary(audioBuffer: Buffer): Promise<stri
   } catch (error) {
     const durationMs = Date.now() - startTime;
 
-    logger.error("❌ Cloudinary upload failed", {
+    logger.error(" Cloudinary upload failed", {
       error: error instanceof Error ? error.message : String(error),
       durationMs,
     });
@@ -85,10 +85,10 @@ export async function deleteAudioFromCloudinary(publicUrl: string): Promise<void
       resource_type: "raw", // Match upload type
     });
 
-    logger.debug("🗑️  Audio deleted from Cloudinary", { publicId });
+    logger.debug("  Audio deleted from Cloudinary", { publicId });
   } catch (error) {
     // Non-critical error - just log it
-    logger.warn("⚠️  Failed to delete audio from Cloudinary", {
+    logger.warn("  Failed to delete audio from Cloudinary", {
       error: error instanceof Error ? error.message : String(error),
       url: publicUrl,
     });

@@ -36,7 +36,7 @@ export async function sendMeetingConfirmation(meeting: Meeting): Promise<boolean
     // Build confirmation message
     const message = buildMeetingConfirmationMessage(meeting);
 
-    logger.info("📨 Sending meeting confirmation", {
+    logger.info(" Sending meeting confirmation", {
       phone: meeting.phone,
       name: meeting.name,
       date: meeting.date,
@@ -50,21 +50,21 @@ export async function sendMeetingConfirmation(meeting: Meeting): Promise<boolean
     const sent = await sendTextMessage(internationalPhone, message);
 
     if (sent) {
-      logger.info("✅ Meeting confirmation sent successfully", {
+      logger.info(" Meeting confirmation sent successfully", {
         phone: meeting.phone,
         internationalPhone,
         message: message.substring(0, 50) + "...",
       });
       return true;
     } else {
-      logger.error("❌ Failed to send meeting confirmation", {
+      logger.error(" Failed to send meeting confirmation", {
         phone: meeting.phone,
         internationalPhone,
       });
       return false;
     }
   } catch (error) {
-    logger.error("❌ Error sending meeting confirmation", {
+    logger.error(" Error sending meeting confirmation", {
       error: error instanceof Error ? error.message : String(error),
       phone: meeting.phone,
     });

@@ -30,22 +30,15 @@ function cleanupProcessedMessages(): void {
   const currentSize = processedMessages.size;
   
   if (currentSize >= MAX_PROCESSED_MESSAGES) {
-    // Clear entire set when reaching limit
-    // Safe because TTL is only 60 seconds anyway
     processedMessages.clear();
-    
-    logger.info(`🧹 Cleaned up processed messages cache (was ${currentSize} entries)`);
   }
 }
 
-// Periodic cleanup every hour as safety net
 setInterval(() => {
   if (processedMessages.size > 0) {
-    const sizeBefore = processedMessages.size;
     processedMessages.clear();
-    logger.info(`🧹 Periodic cleanup: cleared ${sizeBefore} processed message IDs`);
   }
-}, 3600000); // 1 hour
+}, 3600000);
 
 /**
  * Handle incoming WhatsApp webhook
@@ -112,10 +105,8 @@ async function processMessage(message: WAMessage): Promise<void> {
   const customerOptedOut = await isOptedOut(phone);
 
   if (customerOptedOut) {
-    // Customer sent a message AFTER opting out → They're back! Re-engage them.
-    logger.info("🔄 Customer re-engaged after opt-out!", { phone });
+    logger.info("[OPTOUT] Customer re-engaged", { phone });
     await clearOptOut(phone);
-    // Continue processing normally...
   }
 
   // Step 2: Check if THIS message is an opt-out request (only for text messages)
@@ -126,14 +117,12 @@ async function processMessage(message: WAMessage): Promise<void> {
       // Customer wants to opt out!
       await setOptOut(phone, optOutDetection.detectedPhrase);
 
-      // Send confirmation message
       await sendTextMessage(
         phone,
-        "הבנתי, הסרתי אותך מרשימת התפוצה. אם תרצה לחזור ולשוחח, פשוט שלח לי הודעה בכל עת! 👋"
+        "הבנתי, הסרתי אותך מרשימת התפוצה. אם תרצה לחזור ולשוחח, פשוט שלח לי הודעה בכל עת!"
       );
-
-      logger.info("✅ Opt-out confirmation sent", { phone });
-      return; // Don't process further
+      logger.info("[OPTOUT] Confirmation sent", { phone });
+      return;
     }
   }
 
@@ -145,8 +134,7 @@ async function processMessage(message: WAMessage): Promise<void> {
   const isImage = message.message?.imageMessage;
 
   if (isAudio) {
-    // Handle voice message - WAIT for transcription before buffering
-    logger.info(`🎤 ${normalized.sender.name || normalized.sender.phone}: [Voice message]`);
+    logger.info("[MSG] Voice message received", { phone });
 
     const audioUrl = await decryptMedia(message);
     if (audioUrl) {
@@ -154,13 +142,9 @@ async function processMessage(message: WAMessage): Promise<void> {
       if (transcription) {
         normalized.message.text = transcription;
         normalized.message.mediaUrl = audioUrl;
-
-        console.log("\n" + "─".repeat(60));
-        logger.info(`📩 ${normalized.sender.name || normalized.sender.phone}: "${transcription}"`);
-        console.log("─".repeat(60));
+        logger.info("[MSG] Transcribed", { phone, text: transcription.substring(0, 50) });
       } else {
-        // Transcription failed - send fallback response
-        logger.warn("⚠️  Transcription failed - sending fallback response");
+        logger.warn("[MSG] Transcription failed", { phone });
         await sendTextMessage(
           normalized.sender.phone,
           "מצטער, לא הצלחתי להבין את ההקלטה הקולית. אנא נסה לשלוח שוב או כתוב בטקסט."
@@ -168,8 +152,7 @@ async function processMessage(message: WAMessage): Promise<void> {
         return;
       }
     } else {
-      // Decryption failed - send fallback response
-      logger.warn("⚠️  Audio decryption failed - sending fallback response");
+      logger.warn("[MSG] Audio decryption failed", { phone });
       await sendTextMessage(
         normalized.sender.phone,
         "מצטער, נתקלתי בבעיה בקבלת ההקלטה הקולית. אנא נסה לשלוח שוב."
@@ -177,8 +160,7 @@ async function processMessage(message: WAMessage): Promise<void> {
       return;
     }
   } else if (isImage) {
-    // Handle image message - WAIT for analysis before buffering
-    logger.info(`📸 ${normalized.sender.name || normalized.sender.phone}: [Image]`);
+    logger.info("[MSG] Image received", { phone });
 
     const imageUrl = await decryptMedia(message);
     if (imageUrl) {
@@ -186,32 +168,18 @@ async function processMessage(message: WAMessage): Promise<void> {
       const analysis = await analyzeImage(imageUrl, caption);
 
       if (analysis) {
-        // Combine caption + analysis
         const fullText = caption
           ? `[תמונה: ${caption}]\n\nניתוח התמונה: ${analysis}`
           : `[תמונה]\n\nניתוח: ${analysis}`;
 
         normalized.message.text = fullText;
         normalized.message.mediaUrl = imageUrl;
-
-        console.log("\n" + "─".repeat(60));
-        if (caption) {
-          logger.info(`📩 Caption: "${caption}"`);
-        }
-        logger.info(`📸 Analysis: "${analysis.substring(0, 80)}..."`);
-        console.log("─".repeat(60));
       } else {
-        // Analysis failed - use caption if available, otherwise send fallback
-        logger.warn("⚠️  Image analysis failed");
+        logger.warn("[MSG] Image analysis failed", { phone });
         
         if (caption) {
-          // At least use the caption
           normalized.message.text = `[תמונה: ${caption}]\n\n(לא הצלחתי לנתח את התמונה, אבל ראיתי את הכיתוב)`;
-          console.log("\n" + "─".repeat(60));
-          logger.info(`📩 Using caption only: "${caption}"`);
-          console.log("─".repeat(60));
         } else {
-          // No caption - send fallback response
           await sendTextMessage(
             normalized.sender.phone,
             "מצטער, לא הצלחתי לנתח את התמונה. אנא נסה לשלוח שוב או תאר במילים מה בתמונה."
@@ -220,8 +188,7 @@ async function processMessage(message: WAMessage): Promise<void> {
         }
       }
     } else {
-      // Decryption failed - send fallback response
-      logger.warn("⚠️  Image decryption failed - sending fallback response");
+      logger.warn("[MSG] Image decryption failed", { phone });
       await sendTextMessage(
         normalized.sender.phone,
         "מצטער, נתקלתי בבעיה בקבלת התמונה. אנא נסה לשלוח שוב."
@@ -229,17 +196,12 @@ async function processMessage(message: WAMessage): Promise<void> {
       return;
     }
   } else {
-    // Regular text message
-    console.log("\n" + "─".repeat(60));
-    logger.info(`📩 ${normalized.sender.name || normalized.sender.phone}: "${normalized.message.text}"`);
-    console.log("─".repeat(60));
+    logger.info("[MSG] Text received", { phone, text: normalized.message.text?.substring(0, 50) });
 
-    // If message has other media (video/document), decrypt it
     if (hasMedia(message)) {
       const mediaUrl = await decryptMedia(message);
       if (mediaUrl) {
         normalized.message.mediaUrl = mediaUrl;
-        logger.info("📎 Media attached");
       }
     }
   }

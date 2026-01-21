@@ -18,7 +18,7 @@ const openai = new OpenAI({
  */
 export async function transcribeAudio(audioUrl: string): Promise<string | null> {
   try {
-    logger.info("🎤 Transcribing audio...");
+    logger.info(" Transcribing audio...");
 
     // Download audio file
     const audioResponse = await axios.get(audioUrl, {
@@ -42,14 +42,14 @@ export async function transcribeAudio(audioUrl: string): Promise<string | null> 
     const text = transcription.text.trim();
 
     if (text) {
-      logger.info(`📝 Transcription: "${text}"`);
+      logger.info(` Transcription: "${text}"`);
       return text;
     }
 
-    logger.warn("⚠️  Transcription returned empty text");
+    logger.warn("  Transcription returned empty text");
     return null;
   } catch (error) {
-    logger.error("❌ Transcription failed", {
+    logger.error(" Transcription failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;

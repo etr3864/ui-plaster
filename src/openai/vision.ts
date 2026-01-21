@@ -50,13 +50,13 @@ export async function analyzeImage(
   caption?: string
 ): Promise<string | null> {
   try {
-    logger.info("🖼️  Analyzing image...");
+    logger.info("  Analyzing image...");
 
     // Download image and convert to base64
     const base64Image = await downloadImageAsBase64(imageUrl);
 
     if (!base64Image) {
-      logger.error("❌ Failed to download image");
+      logger.error(" Failed to download image");
       return null;
     }
 
@@ -89,14 +89,14 @@ export async function analyzeImage(
     const analysis = response.choices[0]?.message?.content;
 
     if (!analysis) {
-      logger.warn("⚠️  Vision API returned empty analysis");
+      logger.warn("  Vision API returned empty analysis");
       return null;
     }
 
-    logger.info(`📸 Analysis: "${analysis.substring(0, 100)}..."`);
+    logger.info(` Analysis: "${analysis.substring(0, 100)}..."`);
     return analysis;
   } catch (error) {
-    logger.error("❌ Image analysis failed", {
+    logger.error(" Image analysis failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;

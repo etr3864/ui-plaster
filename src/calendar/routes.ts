@@ -54,13 +54,13 @@ async function addMeetingToHistory(meeting: Meeting): Promise<void> {
     const ttlSeconds = await redis.ttl(chatKey);
     if (ttlSeconds > 0) {
       await redis.setex(chatKey, ttlSeconds, JSON.stringify(history));
-      logger.info("📝 Meeting added to chat history", {
+      logger.info(" Meeting added to chat history", {
         phone: meeting.phone,
         info: meetingInfo,
       });
     }
   } catch (error) {
-    logger.warn("⚠️  Failed to add meeting to history", {
+    logger.warn("  Failed to add meeting to history", {
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -98,7 +98,7 @@ router.post("/meeting", async (req: Request, res: Response) => {
     // Validate meeting data
     const validation = validateMeeting(incomingMeeting);
     if (!validation.valid) {
-      logger.warn("⚠️  Invalid meeting data", { error: validation.error });
+      logger.warn("  Invalid meeting data", { error: validation.error });
       return res.status(400).json({
         status: "error",
         message: validation.error,
@@ -127,7 +127,7 @@ router.post("/meeting", async (req: Request, res: Response) => {
       } as MeetingResponse);
     }
 
-    logger.info("✅ Meeting received and saved", {
+    logger.info(" Meeting received and saved", {
       phone: meeting.phone,
       name: meeting.name,
       date: meeting.date,
@@ -147,7 +147,7 @@ router.post("/meeting", async (req: Request, res: Response) => {
     } as MeetingResponse);
 
   } catch (error) {
-    logger.error("❌ Error processing meeting", {
+    logger.error(" Error processing meeting", {
       error: error instanceof Error ? error.message : String(error),
     });
 
@@ -181,7 +181,7 @@ router.get("/meeting/:phone", async (req: Request, res: Response) => {
     } as MeetingResponse);
 
   } catch (error) {
-    logger.error("❌ Error retrieving meeting", {
+    logger.error(" Error retrieving meeting", {
       error: error instanceof Error ? error.message : String(error),
     });
 
@@ -214,7 +214,7 @@ router.delete("/meeting/:phone", async (req: Request, res: Response) => {
     } as MeetingResponse);
 
   } catch (error) {
-    logger.error("❌ Error deleting meeting", {
+    logger.error(" Error deleting meeting", {
       error: error instanceof Error ? error.message : String(error),
     });
 
@@ -250,7 +250,7 @@ router.post("/test/day-reminder/:phone", async (req: Request, res: Response) => 
       });
     }
   } catch (error) {
-    logger.error("❌ Error sending test day reminder", {
+    logger.error(" Error sending test day reminder", {
       error: error instanceof Error ? error.message : String(error),
     });
 
@@ -283,7 +283,7 @@ router.post("/test/before-reminder/:phone", async (req: Request, res: Response) 
       });
     }
   } catch (error) {
-    logger.error("❌ Error sending test before reminder", {
+    logger.error(" Error sending test before reminder", {
       error: error instanceof Error ? error.message : String(error),
     });
 
@@ -308,7 +308,7 @@ router.get("/test/list-meetings", async (_req: Request, res: Response) => {
       meetings,
     });
   } catch (error) {
-    logger.error("❌ Error listing meetings", {
+    logger.error(" Error listing meetings", {
       error: error instanceof Error ? error.message : String(error),
     });
 

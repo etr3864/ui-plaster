@@ -52,6 +52,7 @@ export const config = {
   redisTtlDays: parseInt(process.env.REDIS_TTL_DAYS || "7", 10), // Keep conversations for 7 days
 
   // Meeting Reminders
+  remindersEnabled: process.env.REMINDERS_ENABLED !== "false", // On by default
   reminderDayOfMeetingTime: process.env.REMINDER_DAY_OF_MEETING_TIME || "09:00",
   reminderMinutesBefore: parseInt(process.env.REMINDER_MINUTES_BEFORE || "45", 10),
   reminderWindowMinutes: parseInt(process.env.REMINDER_WINDOW_MINUTES || "3", 10),
@@ -68,6 +69,12 @@ export const config = {
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",
+
+  // Conversation Summary
+  summaryEnabled: process.env.SUMMARY_ENABLED === "true",
+  summaryDelayMinutes: parseInt(process.env.SUMMARY_DELAY_MINUTES || "30", 10),
+  summaryMinMessages: parseInt(process.env.SUMMARY_MIN_MESSAGES || "4", 10),
+  summaryWebhookUrl: process.env.SUMMARY_WEBHOOK_URL || "",
 
   // Debug mode (skip webhook verification)
   skipWebhookVerification: process.env.SKIP_WEBHOOK_VERIFICATION === "true",

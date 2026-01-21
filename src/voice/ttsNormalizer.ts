@@ -53,11 +53,11 @@ export async function normalizeForTTS(text: string): Promise<string> {
     const durationMs = Date.now() - startTime;
 
     if (!normalized) {
-      logger.warn("⚠️  AI normalization empty - using basic cleanup");
+      logger.warn("  AI normalization empty - using basic cleanup");
       return basicNormalization(text);
     }
 
-    logger.info("✅ Text normalized", {
+    logger.info(" Text normalized", {
       chars: `${text.length} → ${normalized.length}`,
       time: `${durationMs}ms`,
     });
@@ -66,7 +66,7 @@ export async function normalizeForTTS(text: string): Promise<string> {
   } catch (error) {
     const durationMs = Date.now() - startTime;
 
-    logger.warn("⚠️  Normalization failed - using basic cleanup", {
+    logger.warn("  Normalization failed - using basic cleanup", {
       error: error instanceof Error ? error.message : String(error),
       durationMs,
     });

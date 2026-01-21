@@ -12,9 +12,11 @@ import { config } from "../config";
 import { logger } from "../utils/logger";
 import { buildPromptMessages } from "./buildPrompt";
 import { askOpenAI } from "../openai/client";
-import { sendTextMessage } from "../wa/sendMessage";
+import { sendTextMessage, sendImageMessage } from "../wa/sendMessage";
 import { getRedis } from "../db/redis";
 import { handleVoiceReply } from "../voice/voiceReplyHandler";
+import { extractImages } from "../images/imageHandler";
+import { trackUserMessage } from "../summary";
 
 // In-memory conversation history per phone number (fallback)
 const conversationHistory = new Map<string, ChatMessage[]>();
@@ -52,9 +54,9 @@ export async function saveCustomerInfo(
       const ttlSeconds = 365 * 24 * 60 * 60; // 1 year
       await redis.setex(key, ttlSeconds, customerData);
 
-      logger.info(`👤 Saved customer info: "${name}" (${gender})`);
+      logger.debug("[CUSTOMER] Saved info", { name, gender });
     } catch (error) {
-      logger.warn("⚠️  Failed to save customer info to Redis", {
+      logger.warn("[CUSTOMER] Failed to save to Redis", {
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -79,7 +81,7 @@ export async function getCustomerInfo(
         return { name: parsed.name, gender: parsed.gender };
       }
     } catch (error) {
-      logger.warn("⚠️  Failed to get customer info from Redis", {
+      logger.warn("[CUSTOMER] Failed to get from Redis", {
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -106,7 +108,7 @@ export async function getHistory(phone: string): Promise<ChatMessage[]> {
       }
       return [];
     } catch (error) {
-      logger.warn("⚠️  Failed to get history from Redis, using in-memory", {
+      logger.warn("[HISTORY] Failed to get from Redis, using in-memory", {
         error: error instanceof Error ? error.message : String(error),
       });
       return conversationHistory.get(phone) || [];
@@ -151,7 +153,7 @@ async function addToHistory(phone: string, message: ChatMessage, shouldLog = tru
 
       return;
     } catch (error) {
-      logger.warn("⚠️  Failed to save to Redis, using in-memory", {
+      logger.warn("[HISTORY] Failed to save to Redis, using in-memory", {
         error: error instanceof Error ? error.message : String(error),
       });
       // Fall through to in-memory
@@ -193,11 +195,7 @@ export async function flushConversation(
     // Get existing history
     const history = await getHistory(phone);
     
-    if (history.length > 0) {
-      logger.info(`📚 Loaded ${history.length} previous messages from history`);
-    }
-    
-    logger.info(`🤖 Generating response...`);
+    logger.info("[AI] Generating response", { historySize: history.length });
 
     // Build prompt messages (system + history + batch)
     const promptMessages = await buildPromptMessages(history, batchMessages, phone);
@@ -206,16 +204,9 @@ export async function flushConversation(
     const response = await askOpenAI(promptMessages);
 
     if (!response) {
-      logger.error("❌ AI failed to generate response - sending fallback");
-      
-      // Send fallback response to customer instead of leaving them hanging
+      logger.error("[AI] Failed to generate response - sending fallback");
       const fallbackResponse = "מצטער, נתקלתי בקושי טכני זמני. אנא נסה שוב עוד רגע.";
-      const sent = await sendTextMessage(phone, fallbackResponse);
-      
-      if (sent) {
-        logger.info("💬 Sent fallback response due to AI failure");
-      }
-      
+      await sendTextMessage(phone, fallbackResponse);
       return;
     }
 
@@ -226,8 +217,13 @@ export async function flushConversation(
         role: "user",
         content,
         timestamp: msg.message.timestamp,
-      }, false); // Don't log individual saves
+      }, false);
     }
+
+    // Track user message for summary scheduler
+    const customerInfo = await getCustomerInfo(phone);
+    const customerName = customerInfo?.name || batchMessages[0]?.sender?.name || "לקוח";
+    void trackUserMessage(phone, customerName);
 
     // Add assistant response to history (always save as text, even if sent as voice)
     await addToHistory(phone, {
@@ -236,45 +232,53 @@ export async function flushConversation(
       timestamp: Date.now(),
     }, false); // Don't log individual saves
     
-    // Single log for all saves (calculate without re-fetching)
-    const finalHistorySize = history.length + batchMessages.length + 1;
-    logger.info(`💾 Conversation saved (${finalHistorySize} messages in history)`);
 
-    // Attempt voice reply if feature is enabled
+    // Extract any image tags from response
+    const { cleanText, images } = extractImages(response);
+
+    // Attempt voice reply if feature is enabled (only for text, not images)
     let sentAsVoice = false;
-    if (config.voiceRepliesEnabled) {
+    if (config.voiceRepliesEnabled && images.length === 0) {
       try {
         // Detect incoming message type (for voice trigger)
         const incomingType = batchMessages[0]?.message?.type || "text";
         
         sentAsVoice = await handleVoiceReply({
           phone,
-          responseText: response,
+          responseText: cleanText,
           incomingMessageType: incomingType,
           conversationHistory: history,
         });
       } catch (error) {
-        logger.warn("Voice reply failed, falling back to text", {
+        logger.warn("[VOICE] Failed, falling back to text", {
           error: error instanceof Error ? error.message : String(error),
         });
       }
     }
 
-    // If voice was sent successfully, we're done
     if (sentAsVoice) {
-      logger.info(`🎤 Voice reply sent: "${response.substring(0, 80)}${response.length > 80 ? "..." : ""}"`);
-      console.log("─".repeat(60) + "\n");
+      logger.info("[VOICE] Reply sent", { phone });
       return;
     }
 
-    // Otherwise, send text response (normal flow or fallback)
-    const sent = await sendTextMessage(phone, response);
+    if (cleanText) {
+      const sent = await sendTextMessage(phone, cleanText);
+      if (!sent) {
+        logger.error("[SEND] Failed to send message", { phone });
+      } else {
+        logger.info("[SEND] Reply sent", { phone });
+      }
+    }
 
-    if (!sent) {
-      logger.error("❌ Failed to send message");
-    } else {
-      logger.info(`💬 Reply: "${response.substring(0, 80)}${response.length > 80 ? "..." : ""}"`);
-      console.log("─".repeat(60) + "\n");
+    for (const image of images) {
+      if (cleanText || images.indexOf(image) > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      
+      const imageSent = await sendImageMessage(phone, image.key, image.caption);
+      if (!imageSent) {
+        logger.error("[SEND] Failed to send image", { phone, imageKey: image.key });
+      }
     }
   } catch (error) {
     logger.error("Failed to flush conversation", {
@@ -320,14 +324,11 @@ export async function clearHistory(phone: string): Promise<void> {
       logger.debug("History cleared from Redis", { phone });
       return;
     } catch (error) {
-      logger.warn("⚠️  Failed to clear from Redis, clearing in-memory", {
+      logger.warn("[HISTORY] Failed to clear from Redis", {
         error: error instanceof Error ? error.message : String(error),
       });
-      // Fall through to in-memory
     }
   }
 
-  // Fallback to in-memory
   conversationHistory.delete(phone);
-  logger.debug("History cleared from memory", { phone });
 }

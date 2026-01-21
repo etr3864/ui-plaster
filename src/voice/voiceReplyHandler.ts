@@ -38,32 +38,32 @@ export async function handleVoiceReply(context: VoiceReplyContext): Promise<bool
     }
 
     // Log start with clear indicator
-    logger.info("🎤 Voice Reply Pipeline Started", {
+    logger.info(" Voice Reply Pipeline Started", {
       phone: context.phone,
       trigger: decision.reason,
       textPreview: context.responseText.substring(0, 50) + "...",
     });
 
     // Step 2: Normalize text for TTS
-    logger.info("🔄 Normalizing text for TTS...");
+    logger.info(" Normalizing text for TTS...");
     const normalizedText = await normalizeForTTS(context.responseText);
 
     // Step 3: Convert to speech
-    logger.info("🎵 Converting to speech via ElevenLabs...");
+    logger.info(" Converting to speech via ElevenLabs...");
     const audioBuffer = await textToSpeech(normalizedText);
 
     // Step 4: Send voice message
-    logger.info("📤 Sending voice message to WhatsApp...");
+    logger.info(" Sending voice message to WhatsApp...");
     const sent = await sendVoiceMessage(context.phone, audioBuffer);
 
     if (!sent) {
-      logger.error("❌ Voice send failed - falling back to text");
+      logger.error(" Voice send failed - falling back to text");
       return false;
     }
 
     const totalDurationMs = Date.now() - startTime;
 
-    logger.info("✅ Voice Reply Complete", {
+    logger.info(" Voice Reply Complete", {
       phone: context.phone,
       trigger: decision.reason,
       originalChars: context.responseText.length,
@@ -76,14 +76,14 @@ export async function handleVoiceReply(context: VoiceReplyContext): Promise<bool
   } catch (error) {
     const totalDurationMs = Date.now() - startTime;
 
-    logger.error("❌ Voice Pipeline Failed", {
+    logger.error(" Voice Pipeline Failed", {
       phone: context.phone,
       error: error instanceof Error ? error.message : String(error),
       durationMs: totalDurationMs,
       stage: "unknown",
     });
 
-    logger.info("↩️  Falling back to text message");
+    logger.info("  Falling back to text message");
     return false;
   }
 }

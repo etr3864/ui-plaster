@@ -30,7 +30,7 @@ export async function shouldUseVoiceReply(
 
   // Rule 1: Always respond with voice if customer sent voice
   if (incomingMessageType === "audio") {
-    logger.info("🎤 Voice → Voice: Customer sent audio, replying with voice");
+    logger.info(" Voice → Voice: Customer sent audio, replying with voice");
     return { shouldUseVoice: true, reason: "incoming_voice" };
   }
 
@@ -44,11 +44,11 @@ export async function shouldUseVoiceReply(
 
     // AI Check: Is this a good moment for voice?
     if (config.randomVoiceAiCheck) {
-      logger.info("🤖 Checking if moment is right for voice (AI decision)...");
+      logger.info(" Checking if moment is right for voice (AI decision)...");
       const aiDecision = await askAIForVoiceDecision(conversationHistory);
 
       if (aiDecision) {
-        logger.info("✨ Smart Voice: AI approved - good moment for personal touch", {
+        logger.info(" Smart Voice: AI approved - good moment for personal touch", {
           userMessages: userMessageCount,
         });
 
@@ -57,11 +57,11 @@ export async function shouldUseVoiceReply(
 
         return { shouldUseVoice: true, reason: "random_intelligent" };
       } else {
-        logger.debug("🤖 AI: Not the right moment for voice");
+        logger.debug(" AI: Not the right moment for voice");
       }
     } else {
       // Simple random without AI (fallback)
-      logger.info("✨ Random Voice: Sending voice (no AI check)", {
+      logger.info(" Random Voice: Sending voice (no AI check)", {
         userMessages: userMessageCount,
       });
 

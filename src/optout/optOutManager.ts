@@ -30,7 +30,7 @@ export async function isOptedOut(phone: string): Promise<boolean> {
     const status: OptOutStatus = JSON.parse(data);
     return status.unsubscribed;
   } catch (error) {
-    logger.error("❌ Failed to check opt-out status", {
+    logger.error(" Failed to check opt-out status", {
       phone,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -44,7 +44,7 @@ export async function isOptedOut(phone: string): Promise<boolean> {
 export async function setOptOut(phone: string, reason?: string): Promise<void> {
   const redis = getRedis();
   if (!redis || !config.redisEnabled) {
-    logger.warn("⚠️  Redis not available, cannot save opt-out status");
+    logger.warn("  Redis not available, cannot save opt-out status");
     return;
   }
 
@@ -60,13 +60,13 @@ export async function setOptOut(phone: string, reason?: string): Promise<void> {
     const ttlSeconds = config.redisTtlDays * 24 * 60 * 60;
     await redis.setex(getOptOutKey(phone), ttlSeconds, JSON.stringify(status));
 
-    logger.info("🚫 Customer opted out", {
+    logger.info(" Customer opted out", {
       phone,
       reason: reason || "not specified",
       expiresIn: `${config.redisTtlDays} days`,
     });
   } catch (error) {
-    logger.error("❌ Failed to save opt-out status", {
+    logger.error(" Failed to save opt-out status", {
       phone,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -85,10 +85,10 @@ export async function clearOptOut(phone: string): Promise<void> {
   try {
     const deleted = await redis.del(getOptOutKey(phone));
     if (deleted > 0) {
-      logger.info("✅ Customer re-engaged! Opt-out cleared", { phone });
+      logger.info(" Customer re-engaged! Opt-out cleared", { phone });
     }
   } catch (error) {
-    logger.error("❌ Failed to clear opt-out status", {
+    logger.error(" Failed to clear opt-out status", {
       phone,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -110,7 +110,7 @@ export async function getOptOutStatus(phone: string): Promise<OptOutStatus | nul
 
     return JSON.parse(data);
   } catch (error) {
-    logger.error("❌ Failed to get opt-out status", {
+    logger.error(" Failed to get opt-out status", {
       phone,
       error: error instanceof Error ? error.message : String(error),
     });

@@ -38,10 +38,10 @@ export async function decryptMedia(message: WAMessage): Promise<string | null> {
       return response.data.publicUrl;
     }
 
-    logger.warn("⚠️  Media decryption - no URL returned");
+    logger.warn("  Media decryption - no URL returned");
     return null;
   } catch (error) {
-    logger.error("❌ Media decryption failed", {
+    logger.error(" Media decryption failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return null;

@@ -49,7 +49,7 @@ export async function detectOptOut(message: string): Promise<OptOutDetection> {
   const startTime = Date.now();
   
   try {
-    logger.info("🔍 Checking for opt-out request...");
+    logger.info(" Checking for opt-out request...");
 
     const response = await askOpenAI([
       ...OPT_OUT_DETECTION_PROMPT,
@@ -70,18 +70,18 @@ export async function detectOptOut(message: string): Promise<OptOutDetection> {
     const durationMs = Date.now() - startTime;
 
     if (detection.isOptOut) {
-      logger.info("🚫 Opt-out request detected!", {
+      logger.info(" Opt-out request detected!", {
         confidence: detection.confidence,
         phrase: detection.detectedPhrase,
         durationMs,
       });
     } else {
-      logger.debug("✅ Not an opt-out request", { durationMs });
+      logger.debug(" Not an opt-out request", { durationMs });
     }
 
     return detection;
   } catch (error) {
-    logger.warn("⚠️  Opt-out detection failed, using fallback", {
+    logger.warn("  Opt-out detection failed, using fallback", {
       error: error instanceof Error ? error.message : String(error),
     });
 
