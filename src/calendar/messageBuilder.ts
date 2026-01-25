@@ -8,11 +8,6 @@ import { formatMeetingDateTime, getFirstName } from "./dateFormatter";
 
 /**
  * Build meeting confirmation message
- * 
- * Example output:
- * "איתן, קיבלתי את הפגישה.
- *  נשמור על זמינות ביום רביעי, 3.12.2025 בשעה 15:50 - היועץ שלנו יתקשר אליך.
- *  מחכים לשיחה."
  */
 export function buildMeetingConfirmationMessage(meeting: Meeting): string {
   const firstName = getFirstName(meeting.name);
