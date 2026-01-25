@@ -122,8 +122,9 @@ export async function getHistory(phone: string): Promise<ChatMessage[]> {
 /**
  * Add message to conversation history
  * Uses Redis if available, otherwise falls back to in-memory
+ * Exported for use by reminders and confirmations
  */
-async function addToHistory(phone: string, message: ChatMessage, shouldLog = true): Promise<void> {
+export async function addToHistory(phone: string, message: ChatMessage, shouldLog = true): Promise<void> {
   const redis = getRedis();
 
   if (redis) {

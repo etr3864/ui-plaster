@@ -11,6 +11,7 @@ import { Meeting } from "../types";
 import { diffInMinutes, parseTimeToDate, formatDateYMD, getNowInIsrael } from "./timeUtils";
 import { buildDayReminderMessage, buildBeforeReminderMessage } from "./messages";
 import { isOptedOut } from "../../optout/optOutManager";
+import { addToHistory } from "../../conversation/historyManager";
 
 /**
  * Convert Israeli phone format to international for WhatsApp
@@ -57,13 +58,20 @@ async function processMeeting(key: string, meeting: Meeting): Promise<void> {
     const sent = await sendTextMessage(intlPhone, message);
 
     if (sent) {
+      // Add to chat history so agent knows about this reminder
+      await addToHistory(intlPhone, {
+        role: "assistant",
+        content: message,
+        timestamp: Date.now(),
+      }, false);
+
       meeting.flags = {
         ...meeting.flags,
         sentDayReminder: true,
         sentBeforeReminder: meeting.flags?.sentBeforeReminder || false,
       };
       updated = true;
-      logger.info("[REMINDER] Day reminder sent", { phone: meeting.phone });
+      logger.info("[REMINDER] Day reminder sent and added to history", { phone: meeting.phone });
     } else {
       logger.error("[REMINDER] Failed to send day reminder", { phone: meeting.phone });
     }
@@ -79,12 +87,19 @@ async function processMeeting(key: string, meeting: Meeting): Promise<void> {
     const sent = await sendTextMessage(intlPhone, message);
 
     if (sent) {
+      // Add to chat history so agent knows about this reminder
+      await addToHistory(intlPhone, {
+        role: "assistant",
+        content: message,
+        timestamp: Date.now(),
+      }, false);
+
       meeting.flags = {
         sentDayReminder: meeting.flags?.sentDayReminder || false,
         sentBeforeReminder: true,
       };
       updated = true;
-      logger.info("[REMINDER] Before-meeting reminder sent", { phone: meeting.phone });
+      logger.info("[REMINDER] Before-meeting reminder sent and added to history", { phone: meeting.phone });
     } else {
       logger.error("[REMINDER] Failed to send before-meeting reminder", { phone: meeting.phone });
     }

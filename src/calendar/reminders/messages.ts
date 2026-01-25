@@ -19,23 +19,23 @@ function formatTime(time: string): string {
  * Build reminder message for day of meeting
  * Sent at configured time on the day of the meeting
  * 
- * Example: "איתן, מזכירה לך על השיחה שלך ושל היועץ שקבעת היום בשעה 15:50, מקווה שאתה מתרגש כמוני 😉"
+ * Example: "איתן, תזכורת לשיחת הייעוץ שקבעת היום בשעה 15:50. נשמח לדבר איתך."
  */
 export function buildDayReminderMessage(meeting: Meeting): string {
   const firstName = getFirstName(meeting.name);
   const time = formatTime(meeting.time);
-  return `${firstName}, מזכירה לך על השיחה שלך ושל היועץ שקבעת היום בשעה ${time}, מקווה שאתה מתרגש כמוני 😉`;
+  return `${firstName}, תזכורת לשיחת הייעוץ שקבעת היום בשעה ${time}. מחכים לדבר איתך.`;
 }
 
 /**
  * Build reminder message for X minutes before meeting
  * Sent at configured minutes before the meeting time
  * 
- * Example: "איתן מה קורה? בעוד 45 דקות (בשעה 15:50) תקבל שיחה מאחד היועצים שלנו, שיהיה בהצלחה!"
+ * Example: "איתן, בעוד 45 דקות (בשעה 15:50) נתקשר אליך לשיחת הייעוץ. אנא שמור על זמינות."
  */
 export function buildBeforeReminderMessage(meeting: Meeting, minutesBefore: number): string {
   const firstName = getFirstName(meeting.name);
   const time = formatTime(meeting.time);
-  return `${firstName} מה קורה? בעוד ${minutesBefore} דקות (בשעה ${time}) תקבל שיחה מאחד היועצים שלנו, שיהיה בהצלחה!`;
+  return `${firstName}, בעוד ${minutesBefore} דקות (בשעה ${time}) נתקשר אליך לשיחת הייעוץ. אנא שמור על זמינות.`;
 }
 

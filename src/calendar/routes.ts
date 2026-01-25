@@ -20,6 +20,20 @@ import { getRedis } from "../db/redis";
 const router = Router();
 
 /**
+ * Convert phone to international format (972...)
+ * This matches the format used by WhatsApp webhook
+ */
+function toInternationalFormat(phone: string): string {
+  if (phone.startsWith("972")) {
+    return phone;
+  }
+  if (phone.startsWith("0")) {
+    return "972" + phone.substring(1);
+  }
+  return "972" + phone;
+}
+
+/**
  * Add meeting info to chat history
  * This allows the AI to know about scheduled meetings
  */
@@ -28,7 +42,9 @@ async function addMeetingToHistory(meeting: Meeting): Promise<void> {
     const redis = getRedis();
     if (!redis) return;
 
-    const chatKey = `chat:${meeting.phone}`;
+    // Use international format (972...) to match webhook history format
+    const internationalPhone = toInternationalFormat(meeting.phone);
+    const chatKey = `chat:${internationalPhone}`;
     const historyData = await redis.get(chatKey);
     
     if (!historyData) {
@@ -55,7 +71,7 @@ async function addMeetingToHistory(meeting: Meeting): Promise<void> {
     if (ttlSeconds > 0) {
       await redis.setex(chatKey, ttlSeconds, JSON.stringify(history));
       logger.info(" Meeting added to chat history", {
-        phone: meeting.phone,
+        phone: internationalPhone,
         info: meetingInfo,
       });
     }

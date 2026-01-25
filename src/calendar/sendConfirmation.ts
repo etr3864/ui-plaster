@@ -1,12 +1,14 @@
 /**
  * Send Meeting Confirmation
  * Sends confirmation message to customer after meeting is saved
+ * Also adds the message to chat history so the agent knows about it
  */
 
 import { Meeting } from "./types";
 import { buildMeetingConfirmationMessage } from "./messageBuilder";
 import { sendTextMessage } from "../wa/sendMessage";
 import { logger } from "../utils/logger";
+import { addToHistory } from "../conversation/historyManager";
 
 /**
  * Convert Israeli phone format (05XXXXXXXX) to international (972XXXXXXXXX)
@@ -50,7 +52,14 @@ export async function sendMeetingConfirmation(meeting: Meeting): Promise<boolean
     const sent = await sendTextMessage(internationalPhone, message);
 
     if (sent) {
-      logger.info(" Meeting confirmation sent successfully", {
+      // Add to chat history so agent knows about this message
+      await addToHistory(internationalPhone, {
+        role: "assistant",
+        content: message,
+        timestamp: Date.now(),
+      }, false);
+
+      logger.info(" Meeting confirmation sent and added to history", {
         phone: meeting.phone,
         internationalPhone,
         message: message.substring(0, 50) + "...",
