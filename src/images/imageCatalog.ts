@@ -14,28 +14,24 @@ export interface ImageInfo {
 /**
  * Catalog of available images
  * Add new images here - the agent can send any of these
+ * 
+ * TEMPORARILY DISABLED - catalog is empty
+ * To re-enable, add images back in this format:
+ * 
+ * example_key: {
+ *   url: "https://res.cloudinary.com/...",
+ *   caption: "כיתוב אופציונלי",
+ *   description: "תיאור לשימוש ה-AI",
+ * },
  */
 export const IMAGE_CATALOG: Record<string, ImageInfo> = {
-  // מחירון
-  price_table: {
-    url: "https://res.cloudinary.com/daowx6msw/image/upload/v1765802275/WhatsApp_Image_2025-11-26_at_12.01.00_gaafrs.jpg",
-    caption: "המחירון שלנו 💰",
-    description: "טבלת מחירים של כל החבילות - כסף, זהב, יהלום",
-  },
-
-  // מסך ראשי - סיכום אישורי הגעה
-  system_dashboard: {
-    url: "https://res.cloudinary.com/daowx6msw/image/upload/v1766420595/%D7%A6%D7%99%D7%9C%D7%95%D7%9E%D7%99_%D7%9E%D7%A1%D7%9A_%D7%9E%D7%90%D7%A9%D7%A8%D7%99%D7%9D_%D7%91%D7%A7%D7%9C%D7%99%D7%A7_ey20v1.jpg",
-    caption: "כך נראית המערכת שלנו 📊",
-    description: "מסך ראשי של המערכת - סיכום מי אישר הגעה ומי לא",
-  },
-
-  // פירוט סטטוס לכל אורח
-  guest_status: {
-    url: "https://res.cloudinary.com/daowx6msw/image/upload/v1766420595/WhatsApp_Image_2025-12-16_at_13.17.50_nykbtj.jpg",
-    caption: "פירוט סטטוס לכל אורח 👥",
-    description: "תצוגת פירוט סטטוס של כל אורח במערכת",
-  },
+  // קטלוג ריק - שליחת תמונות מושבתת זמנית
+  // 
+  // תמונות קודמות (לשחזור עתידי):
+  // ---------------------------------
+  // price_table: { url: "https://res.cloudinary.com/daowx6msw/image/upload/v1765802275/WhatsApp_Image_2025-11-26_at_12.01.00_gaafrs.jpg", caption: "המחירון שלנו 💰", description: "טבלת מחירים" }
+  // system_dashboard: { url: "https://res.cloudinary.com/daowx6msw/image/upload/v1766420595/%D7%A6%D7%99%D7%9C%D7%95%D7%9E%D7%99_%D7%9E%D7%A1%D7%9A_%D7%9E%D7%90%D7%A9%D7%A8%D7%99%D7%9D_%D7%91%D7%A7%D7%9C%D7%99%D7%A7_ey20v1.jpg", caption: "כך נראית המערכת שלנו 📊", description: "מסך ראשי" }
+  // guest_status: { url: "https://res.cloudinary.com/daowx6msw/image/upload/v1766420595/WhatsApp_Image_2025-12-16_at_13.17.50_nykbtj.jpg", caption: "פירוט סטטוס לכל אורח 👥", description: "פירוט סטטוס" }
 };
 
 /**
