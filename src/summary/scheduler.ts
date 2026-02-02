@@ -21,6 +21,7 @@ async function processPendingSummaries(): Promise<void> {
 
     const summary = await generateSummary(phone, meta.customerName);
     if (!summary) {
+      await markSummarySent(phone);
       logger.info("[SUMMARY] Skipped - insufficient messages or empty history", { phone });
       continue;
     }
